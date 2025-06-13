@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function SelectRole() {
+function SelectRoleContent() {
   const [selectedRole, setSelectedRole] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -205,9 +205,7 @@ export default function SelectRole() {
               )}
             </button>
           </form>
-        </div>
-
-        {/* Footer */}
+        </div>        {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-xs text-gray-500">
             You can change your role later in your profile settings
@@ -215,5 +213,28 @@ export default function SelectRole() {
         </div>
       </div>
     </div>
+  );
+}
+
+function SelectRoleLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Loading...
+          </h2>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SelectRole() {
+  return (
+    <Suspense fallback={<SelectRoleLoading />}>
+      <SelectRoleContent />
+    </Suspense>
   );
 }

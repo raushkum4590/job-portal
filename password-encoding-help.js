@@ -29,5 +29,5 @@
 // / → %2F
 
 // Example: if password is "myP@ss!" it should be "myP%40ss%21"
-console.log('Current password appears to be: jCsfp7wEGnW87KoM');
-console.log('This seems to be alphanumeric only, so no encoding needed.');
+console.log('Password encoding helper - check your password for special characters');
+console.log('If your password contains special characters, they need to be URL encoded.');
