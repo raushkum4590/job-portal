@@ -36,11 +36,8 @@ export async function POST(request) {
     const user = new User({
       name,
       email,
-      password,
-      role,
-    });
-
-    await user.save();
+      password,      role,
+    });    await user.save();
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user.toObject();

@@ -116,16 +116,32 @@ export async function PUT(request, context) {
     const employer = await User.findOne({ email: session.user.email });
     if (!employer || job.employer._id.toString() !== employer._id.toString()) {
       return NextResponse.json({ error: 'Access denied. You can only update applications for your own jobs.' }, { status: 403 });
-    }
-
-    // Find and update the application
+    }    // Find and update the application
     const application = job.applications.id(applicationId);
     if (!application) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 });
     }
 
+    const previousStatus = application.status;
     application.status = status;
-    await job.save();
+    await job.save();    // Send shortlist notification email if status changed to shortlisted
+    if (status === 'shortlisted' && previousStatus !== 'shortlisted') {
+      // Get applicant details
+      const applicant = await User.findById(application.applicant);
+      const companyName = employer?.employerProfile?.companyName || employer?.name || 'Company';
+      
+      if (applicant) {
+        // Send shortlist notification email (don't block response)
+        sendShortlistEmail(applicant.email, {
+          applicantName: applicant.name,
+          jobTitle: job.title,
+          companyName: companyName,
+          nextStep: 'Interview/Assessment'
+        }).catch(error => {
+          console.error('Error sending shortlist notification email:', error);
+        });
+      }
+    }
 
     return NextResponse.json({ 
       message: 'Application status updated successfully',

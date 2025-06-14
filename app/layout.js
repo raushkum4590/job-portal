@@ -1,6 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
+import CookieConsent from "@/components/CookieConsent";
+import Chatbot from "@/components/Chatbot";
+import { CookieProvider } from "@/hooks/useCookieConsent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Job Portal",
-  description: "A modern job portal with authentication",
+  title: "JobForge - Your Career Catalyst",
+  description: "Modern job portal connecting talented professionals with amazing opportunities. AI-powered job matching and personalized career guidance.",
 };
 
 export default function RootLayout({ children }) {
@@ -23,9 +26,13 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <CookieProvider>
+          <AuthProvider>
+            {children}
+            <CookieConsent />
+            <Chatbot />
+          </AuthProvider>
+        </CookieProvider>
       </body>
     </html>
   );

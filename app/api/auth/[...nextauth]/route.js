@@ -5,16 +5,19 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 
 const authOptions = {
-  providers: [
-    GoogleProvider({
+  providers: [    GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
           prompt: "consent",
           access_type: "offline",
-          response_type: "code"
+          response_type: "code",
+          scope: "openid email profile"
         }
+      },
+      httpOptions: {
+        timeout: 40000,
       }
     }),
     CredentialsProvider({
@@ -35,12 +38,21 @@ const authOptions = {
           
           if (!user) {
             return null;
-          }
-
-          const isPasswordValid = await user.comparePassword(credentials.password);
+          }          const isPasswordValid = await user.comparePassword(credentials.password);
           
           if (!isPasswordValid) {
             return null;
+          }          // Check if this is first login and send welcome email if needed
+          if (!user.welcomeEmailSent) {
+            console.log('🎉 First-time credentials login, sending welcome email to:', user.email);
+            sendWelcomeEmail(user.email, {
+              name: user.name,
+              updateUser: true
+            }).then(result => {
+              console.log('✅ First-time login welcome email result:', result);
+            }).catch(error => {
+              console.error('❌ Error sending welcome email for first login:', error);
+            });
           }
 
           return {
@@ -138,11 +150,23 @@ const authOptions = {
               existingUser.isVerified = true;
               await existingUser.save();
             }
-            
-            // Use existing user data
+              // Use existing user data
             user.role = existingUser.role;
             user.id = existingUser._id.toString();
-            user.isNewUser = false;          } else {
+            user.isNewUser = false;            // Check if this is first Google login for existing user
+            if (!existingUser.oauth?.google && existingUser.password !== 'google-oauth' && !existingUser.welcomeEmailSent) {
+              console.log('🎉 First-time Google login, sending welcome email to:', user.email);
+              // Send welcome email for first-time Google login
+              sendWelcomeEmail(user.email, {
+                name: user.name,
+                updateUser: true
+              }).then(result => {
+                console.log('✅ First-time Google login welcome email result:', result);
+              }).catch(error => {
+                console.error('❌ Error sending first-time Google login email:', error);
+              });
+            }
+          } else {
             // Create new user for Google sign-in with default 'user' role
             // They will be redirected to role selection page
             const newUser = new User({
@@ -159,11 +183,19 @@ const authOptions = {
                 }
               }
             });
-            
-            await newUser.save();
+              await newUser.save();
             user.role = 'user'; // Ensure role is 'user' for new users
             user.id = newUser._id.toString();
-            user.isNewUser = true; // Flag to identify new users who need role selection
+            user.isNewUser = true; // Flag to identify new users who need role selection            // Send welcome email for new OAuth users (don't block sign-in)
+            console.log('🎉 New Google user registered, sending welcome email to:', user.email);
+            sendWelcomeEmail(user.email, {
+              name: user.name,
+              updateUser: true
+            }).then(result => {
+              console.log('✅ New Google user welcome email result:', result);
+            }).catch(error => {
+              console.error('❌ Error sending welcome email for OAuth user:', error);
+            });
           }
           
         } catch (error) {
@@ -215,20 +247,16 @@ const authOptions = {
     signUp: '/auth/signup',
     error: '/auth/error', // Custom error page
   },
-  debug: false, // Disable debug mode to suppress warnings
+  debug: process.env.NODE_ENV === 'development', // Enable debug in development
   logger: {
     error(code, metadata) {
       console.error('NextAuth Error:', code, metadata);
     },
     warn(code) {
-      // Suppress DEBUG_ENABLED warnings in development
-      if (code !== 'DEBUG_ENABLED') {
-        console.warn('NextAuth Warning:', code);
-      }
+      console.warn('NextAuth Warning:', code);
     },
     debug(code, metadata) {
-      // Only log debug info for actual errors, not debug enabled warnings
-      if (process.env.NODE_ENV === 'development' && code !== 'DEBUG_ENABLED') {
+      if (process.env.NODE_ENV === 'development') {
         console.log('NextAuth Debug:', code, metadata);
       }
     }

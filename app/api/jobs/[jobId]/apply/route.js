@@ -68,15 +68,27 @@ export async function POST(request, context) {
       whyInterested: applicationData.whyInterested,
       skills: applicationData.skills || [],
       references: applicationData.references || [],
-    };
-
-    // Add application to job
+    };    // Add application to job
     job.applications.push(application);
     await job.save();
 
+    const applicationId = job.applications[job.applications.length - 1]._id;    // Get employer details for notifications
+    const employer = await User.findById(job.employer);
+    const companyName = employer?.employerProfile?.companyName || employer?.name || 'Company';
+
+    // Send email notification to applicant (don't block the response)
+    sendJobApplicationEmail(applicant.email, {
+      applicantName: applicant.name,
+      jobTitle: job.title,
+      companyName: companyName,
+      applicationDate: new Date().toLocaleDateString()
+    }).catch(error => {
+      console.error('Error sending job application email:', error);
+    });
+
     return NextResponse.json({ 
       message: 'Application submitted successfully',
-      applicationId: job.applications[job.applications.length - 1]._id
+      applicationId: applicationId
     }, { status: 201 });
 
   } catch (error) {

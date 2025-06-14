@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Logo from './Logo';
+import { useState } from 'react';
 import { 
   BriefcaseIcon, 
   BuildingOfficeIcon, 
@@ -9,12 +10,23 @@ import {
   PhoneIcon,
   MapPinIcon,
   HeartIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  CogIcon
 } from '@heroicons/react/24/outline';
 
 export default function Footer() {
+  const [showCookieSettings, setShowCookieSettings] = useState(false);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openCookieSettings = () => {
+    // Remove existing consent to show the banner again
+    localStorage.removeItem('cookieConsent');
+    localStorage.removeItem('cookieConsentDate');
+    // Reload the page to show the cookie banner
+    window.location.reload();
   };
 
   return (
@@ -113,14 +125,20 @@ export default function Footer() {
               <span>© 2025 JobForge. Made with</span>
               <HeartIcon className="w-4 h-4 text-red-500" />
               <span>for job seekers worldwide.</span>
-            </div>
-            <div className="flex items-center space-x-6 mt-4 md:mt-0">
+            </div>            <div className="flex items-center space-x-6 mt-4 md:mt-0">
               <Link href="/privacy" className="text-gray-300 hover:text-white text-sm transition-colors duration-200">
                 Privacy Policy
               </Link>
               <Link href="/terms" className="text-gray-300 hover:text-white text-sm transition-colors duration-200">
                 Terms of Service
               </Link>
+              <button 
+                onClick={openCookieSettings}
+                className="flex items-center space-x-1 text-gray-300 hover:text-white text-sm transition-colors duration-200"
+              >
+                <CogIcon className="w-4 h-4" />
+                <span>Cookie Settings</span>
+              </button>
               <button 
                 onClick={scrollToTop}
                 className="flex items-center space-x-1 text-gray-300 hover:text-white text-sm transition-colors duration-200 bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg"
